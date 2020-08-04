@@ -1,0 +1,3 @@
+name: BlockSync
+version: ${project.version}
+main: nl.jerodeveloper.blocksync.BlockSyncPlugin

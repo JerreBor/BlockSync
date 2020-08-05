@@ -28,7 +28,7 @@ public class EntityChangeBlockListener implements Listener {
                 event.getTo().name()
         );
 
-        Packet packet = new Packet(PacketType.CHANGE_BLOCK, packetInfo);
+        Packet packet = new Packet(PacketType.BLOCK_PLACE, packetInfo);
         redis.getTopic().publish(packet.serialize());
     }
 

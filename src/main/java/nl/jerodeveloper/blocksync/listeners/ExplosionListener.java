@@ -20,6 +20,8 @@ public class ExplosionListener implements Listener {
 
     @EventHandler
     public void onExplosion(BlockExplodeEvent event) {
+        event.blockList().add(event.getBlock());
+
         for (Block block : event.blockList()) {
             Location location = block.getLocation();
             PacketInfo packetInfo = new PacketInfo(

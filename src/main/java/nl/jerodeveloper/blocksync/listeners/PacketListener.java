@@ -45,24 +45,10 @@ public class PacketListener {
                     int blockPlaceZ = Integer.parseInt(packetInfoString[2]);
                     World blockPlaceWorld = Bukkit.getWorld(packetInfoString[3]);
                     Material blockPlaceType = Material.valueOf(packetInfoString[4]);
-                    byte blockPlaceData = Byte.parseByte(packetInfoString[5]);
 
                     plugin.getServer().getScheduler().runTask(plugin, () -> {
                         Block blockPlaceBlock = blockPlaceWorld.getBlockAt(blockPlaceX, blockPlaceY, blockPlaceZ);
                         blockPlaceBlock.setType(blockPlaceType);
-                        blockPlaceBlock.getState().setData(new MaterialData(blockPlaceType, blockPlaceData));
-                    });
-                    break;
-                case CHANGE_BLOCK:
-                    int changeBlockX = Integer.parseInt(packetInfoString[0]);
-                    int changeBlockY = Integer.parseInt(packetInfoString[1]);
-                    int changeBlockZ = Integer.parseInt(packetInfoString[2]);
-                    World changeBlockWorld = Bukkit.getWorld(packetInfoString[3]);
-                    Material changeBlockTo = Material.valueOf(packetInfoString[4]);
-
-                    plugin.getServer().getScheduler().runTask(plugin, () -> {
-                        Block changeBlockBlock = changeBlockWorld.getBlockAt(changeBlockX, changeBlockY, changeBlockZ);
-                        changeBlockBlock.setType(changeBlockTo);
                     });
                     break;
             }

@@ -1,15 +1,14 @@
 package nl.jerodeveloper.blocksync.listeners;
 
 import nl.jerodeveloper.blocksync.BlockSyncPlugin;
-import nl.jerodeveloper.blocksync.packets.Packet;
-import nl.jerodeveloper.blocksync.packets.PacketInfo;
 import nl.jerodeveloper.blocksync.packets.PacketType;
 import nl.jerodeveloper.blocksync.util.Redis;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.redisson.api.RQueue;
+import org.bukkit.material.MaterialData;
+import org.redisson.api.RTopic;
 
 public class PacketListener {
 
@@ -23,43 +22,51 @@ public class PacketListener {
 
     public void listen() {
         System.out.println("Listening for incoming packets...");
-        RQueue<String> queue = redis.getPacketQueue();
-        plugin.getServer().getScheduler().runTaskTimerAsynchronously(plugin, () -> {
-            while (!queue.isEmpty()) {
-                String serialized = queue.poll();
-                PacketType packetType = PacketType.valueOf(serialized.split(":")[0].toUpperCase());
-                String[] packetInfoString = serialized.split(":")[1].split(";");
+        RTopic topic = redis.getTopic();
+        topic.addListenerAsync(String.class, (charSequence, serialized) -> {
+            PacketType packetType = PacketType.valueOf(serialized.split(":")[0].toUpperCase());
+            String[] packetInfoString = serialized.split(":")[1].split(";");
 
-                switch (packetType) {
-                    case BLOCK_BREAK:
-                        int blockBreakX = Integer.parseInt(packetInfoString[0]);
-                        int blockBreakY = Integer.parseInt(packetInfoString[1]);
-                        int blockBreakZ = Integer.parseInt(packetInfoString[2]);
-                        World blockBreakWorld = Bukkit.getWorld(packetInfoString[3]);
+            switch (packetType) {
+                case BLOCK_BREAK:
+                    int blockBreakX = Integer.parseInt(packetInfoString[0]);
+                    int blockBreakY = Integer.parseInt(packetInfoString[1]);
+                    int blockBreakZ = Integer.parseInt(packetInfoString[2]);
+                    World blockBreakWorld = Bukkit.getWorld(packetInfoString[3]);
 
-                        plugin.getServer().getScheduler().runTask(plugin, () -> {
-                            Block blockBreakBlock = blockBreakWorld.getBlockAt(blockBreakX, blockBreakY, blockBreakZ);
-                            blockBreakBlock.setType(Material.AIR);
-                        });
-                        break;
-                    case BLOCK_PLACE:
-                        int blockPlaceX = Integer.parseInt(packetInfoString[0]);
-                        int blockPlaceY = Integer.parseInt(packetInfoString[1]);
-                        int blockPlaceZ = Integer.parseInt(packetInfoString[2]);
-                        World blockPlaceWorld = Bukkit.getWorld(packetInfoString[3]);
-                        Material blockPlaceType = Material.valueOf(packetInfoString[4]);
-                        byte blockPlaceData = Byte.parseByte(packetInfoString[5]);
+                    plugin.getServer().getScheduler().runTask(plugin, () -> {
+                        Block blockBreakBlock = blockBreakWorld.getBlockAt(blockBreakX, blockBreakY, blockBreakZ);
+                        blockBreakBlock.setType(Material.AIR);
+                    });
+                    break;
+                case BLOCK_PLACE:
+                    int blockPlaceX = Integer.parseInt(packetInfoString[0]);
+                    int blockPlaceY = Integer.parseInt(packetInfoString[1]);
+                    int blockPlaceZ = Integer.parseInt(packetInfoString[2]);
+                    World blockPlaceWorld = Bukkit.getWorld(packetInfoString[3]);
+                    Material blockPlaceType = Material.valueOf(packetInfoString[4]);
+                    byte blockPlaceData = Byte.parseByte(packetInfoString[5]);
 
-                        plugin.getServer().getScheduler().runTask(plugin, () -> {
-                            Block blockPlaceBlock = blockPlaceWorld.getBlockAt(blockPlaceX, blockPlaceY, blockPlaceZ);
-                            blockPlaceBlock.setType(blockPlaceType);
-                            blockPlaceBlock.getState().setRawData(blockPlaceData);
-                        });
-                        break;
-                }
+                    plugin.getServer().getScheduler().runTask(plugin, () -> {
+                        Block blockPlaceBlock = blockPlaceWorld.getBlockAt(blockPlaceX, blockPlaceY, blockPlaceZ);
+                        blockPlaceBlock.setType(blockPlaceType);
+                        blockPlaceBlock.getState().setData(new MaterialData(blockPlaceType, blockPlaceData));
+                    });
+                    break;
+                case CHANGE_BLOCK:
+                    int changeBlockX = Integer.parseInt(packetInfoString[0]);
+                    int changeBlockY = Integer.parseInt(packetInfoString[1]);
+                    int changeBlockZ = Integer.parseInt(packetInfoString[2]);
+                    World changeBlockWorld = Bukkit.getWorld(packetInfoString[3]);
+                    Material changeBlockTo = Material.valueOf(packetInfoString[4]);
 
+                    plugin.getServer().getScheduler().runTask(plugin, () -> {
+                        Block changeBlockBlock = changeBlockWorld.getBlockAt(changeBlockX, changeBlockY, changeBlockZ);
+                        changeBlockBlock.setType(changeBlockTo);
+                    });
+                    break;
             }
-        }, 0L, 1L);
+        });
     }
 
 }

@@ -7,18 +7,18 @@ import nl.jerodeveloper.blocksync.util.Redis;
 import org.bukkit.Location;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockBurnEvent;
+import org.bukkit.event.block.BlockBreakEvent;
 
-public class BurnListener implements Listener {
+public class BlockBreakListener implements Listener {
 
     private final Redis redis;
 
-    public BurnListener(Redis redis) {
+    public BlockBreakListener(Redis redis) {
         this.redis = redis;
     }
 
     @EventHandler
-    public void onBurn(BlockBurnEvent event) {
+    public void onBreak(BlockBreakEvent event) {
         Location location = event.getBlock().getLocation();
         PacketInfo packetInfo = new PacketInfo(
                 location.getBlockX(),

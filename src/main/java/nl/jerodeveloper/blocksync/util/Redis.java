@@ -1,17 +1,14 @@
 package nl.jerodeveloper.blocksync.util;
 
 import lombok.Getter;
-import nl.jerodeveloper.blocksync.packets.Packet;
 import org.redisson.Redisson;
-import org.redisson.api.RQueue;
+import org.redisson.api.RTopic;
 import org.redisson.api.RedissonClient;
-import org.redisson.client.codec.Codec;
-import org.redisson.codec.JsonJacksonCodec;
 import org.redisson.config.Config;
 
 public class Redis {
 
-    @Getter private RQueue<String> packetQueue;
+    @Getter private RTopic topic;
     @Getter RedissonClient redissonClient;
 
     public void init() {
@@ -26,8 +23,7 @@ public class Redis {
             return;
         }
 
-        this.packetQueue = redissonClient.getQueue("packets");
-        packetQueue.clear();
+        this.topic = redissonClient.getTopic("packets");
 
         System.out.println("Connected to redis");
     }

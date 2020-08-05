@@ -38,10 +38,11 @@ public class BlockSyncPlugin extends JavaPlugin {
         if (isReceiving) {
             new PacketListener(redis, this).listen();
         } else {
-            pluginManager.registerEvents(new BlockPlace(redis), this);
-            pluginManager.registerEvents(new BlockBreak(redis), this);
+            pluginManager.registerEvents(new BlockPlaceListener(redis), this);
+            pluginManager.registerEvents(new BlockBreakListener(redis), this);
             pluginManager.registerEvents(new ExplosionListener(redis), this);
             pluginManager.registerEvents(new BurnListener(redis), this);
+            pluginManager.registerEvents(new EntityChangeBlockListener(redis), this);
         }
 
     }

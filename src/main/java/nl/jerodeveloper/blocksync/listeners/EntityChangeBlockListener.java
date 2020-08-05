@@ -7,28 +7,29 @@ import nl.jerodeveloper.blocksync.util.Redis;
 import org.bukkit.Location;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.entity.EntityChangeBlockEvent;
 
-public class BlockBreak implements Listener {
+public class EntityChangeBlockListener implements Listener {
 
     private final Redis redis;
 
-    public BlockBreak(Redis redis) {
+    public EntityChangeBlockListener(Redis redis) {
         this.redis = redis;
     }
 
     @EventHandler
-    public void onBreak(BlockBreakEvent event) {
+    public void onChangeBlock(EntityChangeBlockEvent event) {
         Location location = event.getBlock().getLocation();
         PacketInfo packetInfo = new PacketInfo(
                 location.getBlockX(),
                 location.getBlockY(),
                 location.getBlockZ(),
-                location.getWorld().getName()
+                location.getWorld().getName(),
+                event.getTo().name()
         );
-        Packet packet = new Packet(PacketType.BLOCK_BREAK, packetInfo);
 
-        redis.getPacketQueue().add(packet.serialize());
+        Packet packet = new Packet(PacketType.CHANGE_BLOCK, packetInfo);
+        redis.getTopic().publish(packet.serialize());
     }
 
 }

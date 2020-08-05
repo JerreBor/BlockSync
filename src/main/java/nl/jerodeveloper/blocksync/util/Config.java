@@ -5,7 +5,7 @@ import lombok.Setter;
 
 public enum Config {
 
-    REDIS_URL("redis.url", "127.0.0.1"),
+    REDIS_URL("redis.url", "redis://127.0.0.1:6379"),
     ROLE("role", "receive")
     ;
 

@@ -30,7 +30,7 @@ public class ExplosionListener implements Listener {
             );
             Packet packet = new Packet(PacketType.BLOCK_BREAK, packetInfo);
 
-            redis.getPacketQueue().add(packet.serialize());
+            redis.getTopic().publish(packet.serialize());
         }
     }
 

@@ -6,6 +6,7 @@ public enum PacketType {
     BLOCK_BREAK,
     PLAYER_MOVE,
     PLAYER_SPAWN,
+    PLAYER_LOGOUT
     ;
 
 }

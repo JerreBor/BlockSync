@@ -1,4 +1,0 @@
-name: BlockSync
-version: ${project.version}
-main: nl.jerodeveloper.blocksync.BlockSyncPlugin
-api-version: 1.16

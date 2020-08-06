@@ -3,4 +3,4 @@ target/
 
 .idea/
 
-BlockSync.iml
+*.iml

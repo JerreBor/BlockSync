@@ -5,13 +5,16 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>nl.jerodeveloper</groupId>
-    <artifactId>BlockSync</artifactId>
+    <artifactId>blocksync</artifactId>
+    <packaging>pom</packaging>
     <version>0.0.1</version>
 
-    <properties>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
-    </properties>
+    <modules>
+        <module>NMS</module>
+        <module>Plugin</module>
+        <module>Config</module>
+        <module>Util</module>
+    </modules>
 
     <repositories>
         <repository>
@@ -20,52 +23,83 @@
         </repository>
     </repositories>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.spigotmc</groupId>
-            <artifactId>spigot-api</artifactId>
-            <version>1.16.1-R0.1-SNAPSHOT</version>
-            <scope>provided</scope>
-        </dependency>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>1.18.12</version>
+                <scope>provided</scope>
+            </dependency>
 
-        <dependency>
-            <groupId>org.redisson</groupId>
-            <artifactId>redisson</artifactId>
-            <version>3.13.2</version>
-        </dependency>
+            <dependency>
+                <groupId>org.redisson</groupId>
+                <artifactId>redisson</artifactId>
+                <version>3.13.2</version>
+            </dependency>
 
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>1.18.12</version>
-            <scope>provided</scope>
-        </dependency>
-    </dependencies>
+            <dependency>
+                <groupId>nl.jerodeveloper</groupId>
+                <artifactId>blocksync-nms-interfaces</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>nl.jerodeveloper</groupId>
+                <artifactId>blocksync-nms-1_16_R1</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>nl.jerodeveloper</groupId>
+                <artifactId>blocksync-config</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>nl.jerodeveloper</groupId>
+                <artifactId>blocksync-util</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.spigotmc</groupId>
+                <artifactId>spigot-api</artifactId>
+                <version>1.9-R0.1-SNAPSHOT</version>
+                <scope>provided</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <properties>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+    </properties>
 
     <build>
-        <defaultGoal>install</defaultGoal>
-
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-                <filtering>true</filtering>
-            </resource>
-        </resources>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>3.2.4</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
+        <defaultGoal>clean package</defaultGoal>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>3.2.0</version>
+                    <configuration>
+                        <archive>
+                            <addMavenDescriptor>false</addMavenDescriptor>
+                            <manifest>
+                                <addClasspath>false</addClasspath>
+                            </manifest>
+                        </archive>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>3.2.4</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
     </build>
 
 </project>

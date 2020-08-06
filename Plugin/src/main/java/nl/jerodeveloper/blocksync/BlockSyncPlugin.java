@@ -2,6 +2,9 @@ package nl.jerodeveloper.blocksync;
 
 import nl.jerodeveloper.blocksync.listeners.PacketListener;
 import nl.jerodeveloper.blocksync.listeners.blocks.*;
+import nl.jerodeveloper.blocksync.listeners.players.JoinListener;
+import nl.jerodeveloper.blocksync.listeners.players.MoveListener;
+import nl.jerodeveloper.blocksync.listeners.players.QuitListener;
 import nl.jerodeveloper.blocksync.redis.Redis;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -42,6 +45,9 @@ public class BlockSyncPlugin extends JavaPlugin {
             pluginManager.registerEvents(new ExplosionListener(redis), this);
             pluginManager.registerEvents(new BurnListener(redis), this);
             pluginManager.registerEvents(new EntityChangeBlockListener(redis), this);
+            pluginManager.registerEvents(new MoveListener(redis), this);
+            pluginManager.registerEvents(new JoinListener(redis), this);
+            pluginManager.registerEvents(new QuitListener(redis), this);
         }
 
     }

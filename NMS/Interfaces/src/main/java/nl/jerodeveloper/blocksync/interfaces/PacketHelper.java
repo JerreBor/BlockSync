@@ -11,7 +11,9 @@ public interface PacketHelper {
     void sendLoginPacket(Redis redis, Player player, Location location);
     void sendLogoutPacket(Redis redis, Player player);
     void receiveLoginPacket(String[] packetInfoString);
-    void receiveMovementPacket(String[] packetInfoString);
+    void receiveMoveLookPacket(String[] packetInfoString);
+    void receiveMovePacket(String[] packetInfoString);
+    void receiveLookPacket(String[] packetInfoString);
     void receiveLogoutPacket(String[] packetInfoString);
 
 }

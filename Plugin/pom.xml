@@ -20,6 +20,7 @@
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
@@ -30,6 +31,16 @@
         <dependency>
             <groupId>nl.jerodeveloper</groupId>
             <artifactId>blocksync-util</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>nl.jerodeveloper</groupId>
+            <artifactId>blocksync-nms-interfaces</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>nl.jerodeveloper</groupId>
+            <artifactId>blocksync-nms-1_16_R1</artifactId>
         </dependency>
     </dependencies>
 
@@ -52,6 +63,19 @@
                         <goals>
                             <goal>shade</goal>
                         </goals>
+                        <configuration>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                        <exclude>META-INF/*.MF</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

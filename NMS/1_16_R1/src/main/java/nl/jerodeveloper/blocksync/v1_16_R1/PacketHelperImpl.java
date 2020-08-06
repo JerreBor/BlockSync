@@ -3,6 +3,7 @@ package nl.jerodeveloper.blocksync.v1_16_R1;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import net.minecraft.server.v1_16_R1.*;
+import nl.jerodeveloper.blocksync.Pair;
 import nl.jerodeveloper.blocksync.interfaces.PacketHelper;
 import nl.jerodeveloper.blocksync.packets.Packet;
 import nl.jerodeveloper.blocksync.packets.PacketInfo;
@@ -10,7 +11,6 @@ import nl.jerodeveloper.blocksync.packets.PacketType;
 import nl.jerodeveloper.blocksync.redis.Redis;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.libs.org.apache.commons.lang3.tuple.ImmutablePair;
 import org.bukkit.craftbukkit.v1_16_R1.CraftServer;
 import org.bukkit.craftbukkit.v1_16_R1.CraftWorld;
 import org.bukkit.craftbukkit.v1_16_R1.entity.CraftPlayer;
@@ -22,7 +22,8 @@ import java.util.UUID;
 
 public class PacketHelperImpl implements PacketHelper {
 
-    private final Map<UUID, ImmutablePair<String, String>> profileCache = new HashMap<>();
+    private final Map<UUID, Pair<String, String>> profileCache = new HashMap<>(); // send
+    private final Map<UUID, Integer> entityIdCache = new HashMap<>(); // receive
 
     @Override
     public void sendMovementPacket(Redis redis, org.bukkit.event.player.PlayerMoveEvent event) {
@@ -31,29 +32,55 @@ public class PacketHelperImpl implements PacketHelper {
         Location from = event.getFrom();
         Location to = event.getTo();
 
+        PacketInfo packetInfo;
+        PacketType packetType;
+
         if (to == null) return;
 
-        PacketInfo packetInfo = new PacketInfo(
-                to.getX() * 32 - from.getX() * 32,
-                to.getY() * 32 - from.getY() * 32,
-                to.getZ() * 32 - from.getY() * 32,
-                to.getYaw(),
-                to.getPitch(),
-                to.getY() == to.getWorld().getHighestBlockYAt(to.getBlockX(), to.getBlockZ()),
-                player.getUniqueId()
-        );
+        if ((to.getYaw() != from.getYaw() || from.getYaw() != from.getYaw()) && (from.getX() != to.getX() || from.getY() != to.getY() || from.getX() != to.getX())) { // move look
+            packetInfo = new PacketInfo(
+                    ((short) (to.getX() * 32 - from.getX() * 32) * 128),
+                    ((short) (to.getY() * 32 - from.getY() * 32) * 128),
+                    ((short) (to.getZ() * 32 - from.getZ() * 32) * 128),
+                    to.getYaw(),
+                    to.getPitch(),
+                    true,
+                    player.getUniqueId()
+            );
+            packetType = PacketType.PLAYER_MOVE_LOOK;
+        } else if ((to.getYaw() != from.getYaw() || from.getYaw() != from.getYaw())) { // look
+            packetInfo = new PacketInfo(
+                    to.getYaw(),
+                    to.getPitch(),
+                    player.getUniqueId(),
+                    true
+            );
 
-        redis.getTopic().publish(new Packet(PacketType.PLAYER_MOVE, packetInfo));
+            packetType = PacketType.PLAYER_LOOK;
+        } else { // move
+            packetInfo = new PacketInfo(
+                    ((short) (to.getX() * 32 - from.getX() * 32) * 128),
+                    ((short) (to.getY() * 32 - from.getY() * 32) * 128),
+                    ((short) (to.getZ() * 32 - from.getZ() * 32) * 128),
+                    player.getUniqueId(),
+                    true
+            );
+            packetType = PacketType.PLAYER_MOVE;
+        }
+
+        Packet packet = new Packet(packetType, packetInfo);
+        redis.getTopic().publish(packet.serialize());
     }
 
     @Override
     public void sendLoginPacket(Redis redis, Player player, Location location) {
-        ImmutablePair<String, String> textureSignaturePair;
+        Pair<String, String> textureSignaturePair;
 
         if (!profileCache.containsKey(player.getUniqueId())) {
             EntityPlayer nmsPlayer = ((CraftPlayer) player).getHandle();
+            System.out.println(nmsPlayer.getProfile().getProperties().get("textures"));
             Property textures = nmsPlayer.getProfile().getProperties().get("textures").iterator().next();
-            textureSignaturePair = new ImmutablePair<>(textures.getValue(), textures.getSignature());
+            textureSignaturePair = Pair.of(textures.getValue(), textures.getSignature());
             profileCache.put(player.getUniqueId(), textureSignaturePair);
         } else {
             textureSignaturePair = profileCache.get(player.getUniqueId());
@@ -72,16 +99,18 @@ public class PacketHelperImpl implements PacketHelper {
                 location.getWorld().getName()
         );
 
-        redis.getTopic().publish(new Packet(PacketType.PLAYER_SPAWN, packetInfo));
+        Packet packet = new Packet(PacketType.PLAYER_SPAWN, packetInfo);
+        redis.getTopic().publish(packet.serialize());
     }
 
     @Override
     public void sendLogoutPacket(Redis redis, Player player) {
         PacketInfo packetInfo = new PacketInfo(
-                player.getEntityId()
+                player.getUniqueId()
         );
 
-        redis.getTopic().publish(new Packet(PacketType.PLAYER_LOGOUT, packetInfo));
+        Packet packet = new Packet(PacketType.PLAYER_LOGOUT, packetInfo);
+        redis.getTopic().publish(packet.serialize());
     }
 
     @Override
@@ -93,8 +122,8 @@ public class PacketHelperImpl implements PacketHelper {
         String signature = packetInfoString[4];
         String displayName = packetInfoString[5];
         UUID uniqueId = UUID.fromString(packetInfoString[6]);
-        byte pitch = Byte.parseByte(packetInfoString[7]);
-        byte yaw = Byte.parseByte(packetInfoString[8]);
+        float pitch = Float.parseFloat(packetInfoString[7]);
+        float yaw = Float.parseFloat(packetInfoString[8]);
         String worldName = packetInfoString[9];
 
         GameProfile profile = new GameProfile(uniqueId, displayName);
@@ -115,30 +144,28 @@ public class PacketHelperImpl implements PacketHelper {
 
         sendToAll(infoPacket, spawnPacket);
 
+        entityIdCache.put(uniqueId, entityPlayer.getId());
+
         System.out.println(String.format("Spawned player: %s", entityPlayer.getName()));
     }
 
     @Override
-    public void receiveMovementPacket(String[] packetInfoString) {
-        UUID uniqueId = UUID.fromString(packetInfoString[8]);
-        Player player = Bukkit.getPlayer(uniqueId);
-
-        if (player == null) return;
-
+    public void receiveMoveLookPacket(String[] packetInfoString) {
         short deltaX = Short.parseShort(packetInfoString[0]);
         short deltaY = Short.parseShort(packetInfoString[1]);
         short deltaZ = Short.parseShort(packetInfoString[2]);
-        byte yaw = Byte.parseByte(packetInfoString[3]);
-        byte pitch = Byte.parseByte(packetInfoString[4]);
+        float yaw = Float.parseFloat(packetInfoString[3]);
+        float pitch = Float.parseFloat(packetInfoString[4]);
         boolean onGround = Boolean.parseBoolean(packetInfoString[5]);
+        int entityId = entityIdCache.get(UUID.fromString(packetInfoString[6]));
 
         PacketPlayOutEntity.PacketPlayOutRelEntityMoveLook movePacket = new PacketPlayOutEntity.PacketPlayOutRelEntityMoveLook(
-                player.getEntityId(),
+                entityId,
                 deltaX,
                 deltaY,
                 deltaZ,
-                yaw,
-                pitch,
+                (byte) yaw,
+                (byte) pitch,
                 onGround
         );
 
@@ -146,9 +173,47 @@ public class PacketHelperImpl implements PacketHelper {
     }
 
     @Override
+    public void receiveLookPacket(String[] packetInfoString) {
+        float yaw = Float.parseFloat(packetInfoString[0]);
+        float pitch = Float.parseFloat(packetInfoString[1]);
+        int entityId = entityIdCache.get(UUID.fromString(packetInfoString[2]));
+        boolean onGround = Boolean.parseBoolean(packetInfoString[3]);
+
+        PacketPlayOutEntity.PacketPlayOutEntityLook look = new PacketPlayOutEntity.PacketPlayOutEntityLook(
+                entityId,
+                (byte) yaw,
+                (byte) pitch,
+                onGround
+        );
+
+        sendToAll(look);
+    }
+
+    @Override
+    public void receiveMovePacket(String[] packetInfoString) {
+        short deltaX = Short.parseShort(packetInfoString[0]);
+        short deltaY = Short.parseShort(packetInfoString[1]);
+        short deltaZ = Short.parseShort(packetInfoString[2]);
+        int entityId = entityIdCache.get(UUID.fromString(packetInfoString[3]));
+        boolean onGround = Boolean.parseBoolean(packetInfoString[4]);
+
+        PacketPlayOutEntity.PacketPlayOutRelEntityMove move = new PacketPlayOutEntity.PacketPlayOutRelEntityMove(
+                entityId,
+                deltaX,
+                deltaY,
+                deltaZ,
+                onGround
+        );
+
+        sendToAll(move);
+    }
+
+    @Override
     public void receiveLogoutPacket(String[] packetInfoString) {
-        PacketPlayOutEntityDestroy entityDestroy = new PacketPlayOutEntityDestroy(Integer.parseInt(packetInfoString[0]));
+        UUID uniqueId = UUID.fromString(packetInfoString[0]);
+        PacketPlayOutEntityDestroy entityDestroy = new PacketPlayOutEntityDestroy(entityIdCache.get(uniqueId));
         sendToAll(entityDestroy);
+        entityIdCache.remove(uniqueId);
     }
 
     private void sendToAll(net.minecraft.server.v1_16_R1.Packet<?>... packets) {
